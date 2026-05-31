@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>تسک‌ها | MonazamBot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#1a2218;--card:#22291f;--border:#2e3d2b;
+  --accent:#5cb85c;--text:#e8f0e8;--sub:#7a9a7a;
+  --danger:#e05555;--yellow:#f0c040;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh;padding-bottom:90px}
+.header{padding:14px 16px 10px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--bg);z-index:10}
+.hcount{margin-right:auto;font-size:13px;font-weight:400;color:var(--sub)}
+.tabs{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;border-bottom:1px solid var(--border);position:sticky;top:49px;background:var(--bg);z-index:10}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;white-space:nowrap;font-size:13px;transition:all .2s;font-family:inherit}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.list{padding:10px 14px}
+.task{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border);transition:opacity .2s;animation:fi .2s}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.task.done{opacity:.45}
+.chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--accent);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.chk.on::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+.tbody{flex:1;min-width:0}
+.ttitle{font-size:15px;line-height:1.4;word-break:break-word}
+.ttitle.done{text-decoration:line-through}
+.tmeta{font-size:12px;margin-top:3px;color:var(--sub)}
+.tmeta.overdue{color:var(--danger)}
+.tmeta.today{color:var(--yellow)}
+.badge{display:inline-block;background:var(--border);border-radius:8px;padding:1px 7px;font-size:11px;margin-top:4px;color:var(--sub)}
+.del{color:var(--border);cursor:pointer;font-size:17px;padding:2px 4px;transition:color .15s;flex-shrink:0}
+.task:hover .del,.task:active .del{color:var(--danger)}
+.empty{text-align:center;padding:50px 20px;color:var(--sub);font-size:15px;line-height:2}
+.fab{position:fixed;bottom:24px;left:20px;width:56px;height:56px;border-radius:28px;background:var(--accent);color:#fff;font-size:30px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(92,184,92,.4);z-index:20;transition:transform .15s}
+.fab:active{transform:scale(.92)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:30;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:20px 20px 0 0;padding:16px 18px 30px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:31;border-top:1px solid var(--border)}
+.sheet.open{transform:translateY(0)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px}
+.sheet label{font-size:12px;color:var(--sub);margin-bottom:5px;display:block}
+.sheet input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:15px;margin-bottom:12px;font-family:inherit}
+.sheet input:focus{outline:none;border-color:var(--accent)}
+.acts{display:flex;gap:10px;margin-top:4px}
+.bsave{flex:1;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit}
+.bcancel{padding:13px 18px;background:var(--border);color:var(--sub);border:none;border-radius:12px;font-size:15px;cursor:pointer;font-family:inherit}
+.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">📌 تسک‌ها<span class="hcount" id="hcount"></span></div>
+
+<div class="tabs">
+  <button class="tab active" data-f="all">همه</button>
+  <button class="tab" data-f="today">امروز</button>
+  <button class="tab" data-f="week">این هفته</button>
+  <button class="tab" data-f="overdue">معوق 🔴</button>
+  <button class="tab" data-f="done">انجام‌شده ✅</button>
+</div>
+
+<div class="list" id="list"><div class="spin"></div></div>
+
+<button class="fab" id="fab">+</button>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <div class="handle"></div>
+  <label>عنوان تسک *</label>
+  <input id="iTitle" placeholder="مثلاً: بررسی وبسایت..." autocomplete="off"/>
+  <label>ددلاین (شمسی)</label>
+  <input id="iDl" placeholder="مثلاً: 1405/03/20" autocomplete="off"/>
+  <label>مسئول</label>
+  <input id="iWho" placeholder="مثلاً: علی" autocomplete="off"/>
+  <div class="acts">
+    <button class="bcancel" onclick="closeSheet()">لغو</button>
+    <button class="bsave" onclick="saveTask()">✓ ذخیره</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────
+// این دو متغیر رو بعد از deploy عوض کن:
+const API = 'https://script.google.com/macros/s/AKfycby2qYDm5jplLBZPWynKuADji04f3yj83mx7p4FkNsE1JhlJhNjoUwVWDO2lJtBh69fIvw/exec';
+const KEY = 'monazam2025secret';
+// ──────────────────────────────────────────────────────────────────────
+
+const tg = window.Telegram.WebApp;
+tg.ready(); tg.expand();
+try{tg.setHeaderColor('#1a2218');tg.setBackgroundColor('#1a2218');}catch(e){}
+
+let tasks=[], filter='all';
+const todayG=new Date(); todayG.setHours(0,0,0,0);
+const weekG=new Date(todayG); weekG.setDate(todayG.getDate()+7);
+
+function gDate(s){if(!s)return null;const d=new Date(s);d.setHours(0,0,0,0);return isNaN(d)?null:d;}
+
+function getFiltered(){
+  return tasks.filter(t=>{
+    const dl=gDate(t.deadline_greg),done=t.status==='done';
+    if(filter==='done')return done;
+    if(done)return false;
+    if(filter==='all')return true;
+    if(!dl)return filter==='all';
+    if(filter==='today')return dl<=todayG;
+    if(filter==='week')return dl>todayG&&dl<=weekG;
+    if(filter==='overdue')return dl<todayG;
+    return true;
+  });
+}
+
+function dlCls(greg){
+  const d=gDate(greg);
+  if(!d)return'';
+  if(d<todayG)return'overdue';
+  if(d.getTime()===todayG.getTime())return'today';
+  return'';
+}
+
+function render(){
+  const items=getFiltered();
+  document.getElementById('hcount').textContent=items.length?`${items.length} مورد`:'';
+  const msgs={all:'هیچ تسکی نیست',today:'امروز تسکی نیست',week:'این هفته تسکی نیست',overdue:'تسک معوقی نیست ✅',done:'هنوز تسکی انجام نشده'};
+  if(!items.length){document.getElementById('list').innerHTML=`<div class="empty">${msgs[filter]||'موردی نیست'}</div>`;return;}
+  document.getElementById('list').innerHTML=items.map(t=>{
+    const done=t.status==='done',cls=dlCls(t.deadline_greg);
+    const dl=t.deadline?`<div class="tmeta ${cls}">📅 ${t.deadline}</div>`:'';
+    const who=t.assigned_to?`<span class="badge">👤 ${t.assigned_to}</span>`:'';
+    return`<div class="task ${done?'done':''}" id="t${t.id}">
+      <div class="chk ${done?'on':''}" onclick="toggle(${t.id})"></div>
+      <div class="tbody"><div class="ttitle ${done?'done':''}">${t.title}</div>${dl}${who}</div>
+      <div class="del" onclick="del(${t.id})">🗑</div>
+    </div>`;
+  }).join('');
+}
+
+async function call(params){
+  const qs=new URLSearchParams({...params,key:KEY}).toString();
+  const r=await fetch(`${API}?${qs}`);
+  return r.json();
+}
+
+async function load(){
+  try{
+    const res=await call({action:'get_tasks'});
+    tasks=res.data||[];
+    render();
+  }catch(e){
+    document.getElementById('list').innerHTML='<div class="empty">❌ خطا در بارگذاری<br><small>اتصال اینترنت رو چک کن</small></div>';
+  }
+}
+
+async function toggle(id){
+  const t=tasks.find(x=>x.id==id);if(!t||t.status==='done')return;
+  t.status='done';render();
+  await call({action:'complete_task',id}).catch(()=>{t.status='pending';render();});
+}
+
+async function del(id){
+  tasks=tasks.filter(t=>t.id!=id);render();
+  await call({action:'delete_task',id}).catch(()=>{});
+}
+
+async function saveTask(){
+  const title=document.getElementById('iTitle').value.trim();
+  if(!title){document.getElementById('iTitle').focus();return;}
+  const dl=document.getElementById('iDl').value.trim();
+  const who=document.getElementById('iWho').value.trim();
+  try{
+    const res=await call({action:'add_task',title,deadline:dl||'',assigned_to:who||''});
+    if(res.data)tasks.unshift(res.data);
+    render();closeSheet();
+    ['iTitle','iDl','iWho'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){alert('خطا در ذخیره');}
+}
+
+document.getElementById('fab').onclick=openSheet;
+document.getElementById('overlay').onclick=closeSheet;
+function openSheet(){document.getElementById('sheet').classList.add('open');document.getElementById('overlay').classList.add('show');setTimeout(()=>document.getElementById('iTitle').focus(),300);}
+function closeSheet(){document.getElementById('sheet').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');filter=t.dataset.f;render();};
+});
+document.getElementById('iTitle').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
+
+load();
+</script>
+</body>
+</html>
