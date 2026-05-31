@@ -3,194 +3,493 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>تسک‌ها | MonazamBot</title>
+<title>MonazamBot</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{
-  --bg:#1a2218;--card:#22291f;--border:#2e3d2b;
-  --accent:#5cb85c;--text:#e8f0e8;--sub:#7a9a7a;
-  --danger:#e05555;--yellow:#f0c040;
+  --bg:#141a12;--card:#1c2419;--border:#273323;
+  --accent:#5cb85c;--acc2:#4a9e4a;
+  --text:#e8f0e8;--sub:#7a9a7a;
+  --danger:#e05555;--warn:#f0c040;--info:#5bc0de;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;min-height:100vh;padding-bottom:90px}
-.header{padding:14px 16px 10px;font-size:18px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--bg);z-index:10}
-.hcount{margin-right:auto;font-size:13px;font-weight:400;color:var(--sub)}
-.tabs{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;border-bottom:1px solid var(--border);position:sticky;top:49px;background:var(--bg);z-index:10}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Tahoma,sans-serif;display:flex;flex-direction:column}
+
+/* ── NAV ── */
+.nav{display:flex;border-top:1px solid var(--border);background:var(--card);flex-shrink:0;z-index:50}
+.nav-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;color:var(--sub);cursor:pointer;font-size:11px;transition:color .2s;font-family:inherit}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:22px;height:22px}
+
+/* ── PAGES ── */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .2s}
+.page.show{opacity:1;pointer-events:all}
+
+/* ── HEADER ── */
+.hdr{padding:12px 16px 8px;font-size:17px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-right{margin-right:auto;font-size:12px;color:var(--sub)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;white-space:nowrap;font-size:13px;transition:all .2s;font-family:inherit}
-.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-.list{padding:10px 14px}
-.task{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border);transition:opacity .2s;animation:fi .2s}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.task.done{opacity:.45}
-.chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--accent);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
-.chk.on{background:var(--accent);border-color:var(--accent)}
-.chk.on::after{content:'✓';color:#fff;font-size:13px;font-weight:700}
+.tab{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:transparent;color:var(--sub);cursor:pointer;white-space:nowrap;font-size:12px;font-family:inherit;transition:all .2s}
+.tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+/* ── SCROLL AREA ── */
+.scroll{flex:1;overflow-y:auto;padding:10px 14px 80px}
+.scroll::-webkit-scrollbar{width:0}
+
+/* ── TASK CARD ── */
+.task{background:var(--card);border-radius:12px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:flex-start;gap:9px;border:1px solid var(--border);animation:fi .2s}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.task.done{opacity:.4}
+.chk{width:21px;height:21px;border-radius:6px;border:2px solid var(--accent);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
+.chk.on{background:var(--accent)}
+.chk.on::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
 .tbody{flex:1;min-width:0}
-.ttitle{font-size:15px;line-height:1.4;word-break:break-word}
-.ttitle.done{text-decoration:line-through}
-.tmeta{font-size:12px;margin-top:3px;color:var(--sub)}
-.tmeta.overdue{color:var(--danger)}
-.tmeta.today{color:var(--yellow)}
-.badge{display:inline-block;background:var(--border);border-radius:8px;padding:1px 7px;font-size:11px;margin-top:4px;color:var(--sub)}
-.del{color:var(--border);cursor:pointer;font-size:17px;padding:2px 4px;transition:color .15s;flex-shrink:0}
+.ttl{font-size:14px;line-height:1.4;word-break:break-word}
+.ttl.done{text-decoration:line-through}
+.tmeta{font-size:11px;margin-top:2px;color:var(--sub)}
+.tmeta.ov{color:var(--danger)}
+.tmeta.td{color:var(--warn)}
+.bdg{display:inline-block;background:var(--border);border-radius:7px;padding:1px 6px;font-size:10px;margin-top:3px;color:var(--sub)}
+.del{color:var(--border);cursor:pointer;font-size:16px;padding:2px 3px;transition:color .15s;flex-shrink:0}
 .task:hover .del,.task:active .del{color:var(--danger)}
-.empty{text-align:center;padding:50px 20px;color:var(--sub);font-size:15px;line-height:2}
-.fab{position:fixed;bottom:24px;left:20px;width:56px;height:56px;border-radius:28px;background:var(--accent);color:#fff;font-size:30px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(92,184,92,.4);z-index:20;transition:transform .15s}
-.fab:active{transform:scale(.92)}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:30;backdrop-filter:blur(2px)}
-.overlay.show{display:block}
-.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:20px 20px 0 0;padding:16px 18px 30px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:31;border-top:1px solid var(--border)}
-.sheet.open{transform:translateY(0)}
-.handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px}
-.sheet label{font-size:12px;color:var(--sub);margin-bottom:5px;display:block}
-.sheet input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:15px;margin-bottom:12px;font-family:inherit}
-.sheet input:focus{outline:none;border-color:var(--accent)}
-.acts{display:flex;gap:10px;margin-top:4px}
-.bsave{flex:1;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit}
-.bcancel{padding:13px 18px;background:var(--border);color:var(--sub);border:none;border-radius:12px;font-size:15px;cursor:pointer;font-family:inherit}
-.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+.empty{text-align:center;padding:40px 20px;color:var(--sub);line-height:2;font-size:14px}
+.spin{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── FAB ── */
+.fab{position:absolute;bottom:12px;left:18px;width:52px;height:52px;border-radius:26px;background:var(--accent);color:#fff;font-size:28px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(92,184,92,.4);z-index:20}
+.fab:active{transform:scale(.93)}
+
+/* ── SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:60;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:18px 18px 0 0;padding:14px 16px 28px;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:61;border-top:1px solid var(--border)}
+.sheet.open{transform:translateY(0)}
+.handle{width:34px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+.shlbl{font-size:11px;color:var(--sub);margin-bottom:4px;display:block}
+.shin{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-size:14px;margin-bottom:10px;font-family:inherit}
+.shin:focus{outline:none;border-color:var(--accent)}
+.shbtns{display:flex;gap:8px}
+.bsave{flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:11px;font-size:14px;cursor:pointer;font-weight:600;font-family:inherit}
+.bcnl{padding:12px 16px;background:var(--border);color:var(--sub);border:none;border-radius:11px;font-size:14px;cursor:pointer;font-family:inherit}
+.sh-title{font-size:15px;font-weight:700;margin-bottom:12px}
+.task-mini{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:8px}
+.task-mini:last-child{border-bottom:none}
+.add-day-btn{width:100%;margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600}
+
+/* ── CALENDAR ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;flex-shrink:0}
+.cal-nav-btn{background:transparent;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:4px 10px}
+.cal-month{font-size:16px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 10px 8px;flex-shrink:0}
+.cal-dh{text-align:center;font-size:11px;color:var(--sub);padding:4px 0;font-weight:600}
+.cal-dh.fri{color:var(--danger)}
+.cal-day{text-align:center;padding:6px 2px;cursor:pointer;border-radius:8px;transition:background .15s;position:relative}
+.cal-day:hover{background:var(--border)}
+.cal-day.today{background:var(--accent);color:#fff;border-radius:8px}
+.cal-day.today .cal-dn{color:#fff}
+.cal-day.selected{background:var(--border);border-radius:8px}
+.cal-day.empty{pointer-events:none}
+.cal-dn{font-size:14px;font-weight:500}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--warn);margin:2px auto 0}
+.cal-events-scroll{flex:1;overflow-y:auto;padding:8px 14px}
+
+/* ── HABITS ── */
+.hab-grid-wrap{flex:1;overflow:auto;position:relative}
+.hab-grid{display:grid;min-width:max-content;padding:8px 14px}
+.hab-corner{background:var(--bg);position:sticky;top:0;right:0;z-index:5;font-size:10px;color:var(--sub);padding:4px 6px}
+.hab-dh{text-align:center;font-size:10px;padding:4px 2px;color:var(--sub);min-width:28px}
+.hab-dh.today-col{color:var(--accent);font-weight:700}
+.hab-name{position:sticky;right:0;background:var(--bg);z-index:4;font-size:12px;padding:4px 8px 4px 0;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center}
+.hab-cell{min-width:28px;height:28px;border-radius:6px;margin:2px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.hab-cell.future{background:var(--border);opacity:.3}
+.hab-cell.empty-past{background:var(--border);opacity:.5}
+.hab-cell.done-cell{opacity:1}
+.hab-cell.done-cell::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
 </style>
 </head>
 <body>
 
-<div class="header">📌 تسک‌ها<span class="hcount" id="hcount"></span></div>
+<!-- PAGES -->
+<div class="pages">
 
-<div class="tabs">
-  <button class="tab active" data-f="all">همه</button>
-  <button class="tab" data-f="today">امروز</button>
-  <button class="tab" data-f="week">این هفته</button>
-  <button class="tab" data-f="overdue">معوق 🔴</button>
-  <button class="tab" data-f="done">انجام‌شده ✅</button>
-</div>
+  <!-- ── PAGE 1: TASKS ── -->
+  <div class="page show" id="p-tasks">
+    <div class="hdr">📌 تسک‌ها<span class="hdr-right" id="t-count"></span></div>
+    <div class="tabs">
+      <button class="tab on" data-f="all">همه</button>
+      <button class="tab" data-f="today">امروز</button>
+      <button class="tab" data-f="week">این هفته</button>
+      <button class="tab" data-f="overdue">معوق 🔴</button>
+      <button class="tab" data-f="done">انجام‌شده ✅</button>
+    </div>
+    <div class="scroll" id="t-list"><div class="spin"></div></div>
+    <button class="fab" id="t-fab">+</button>
+  </div>
 
-<div class="list" id="list"><div class="spin"></div></div>
+  <!-- ── PAGE 2: CALENDAR ── -->
+  <div class="page" id="p-cal">
+    <div class="hdr">📅 تقویم</div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-next">›</button>
+      <span class="cal-month" id="cal-title"></span>
+      <button class="cal-nav-btn" id="cal-prev">‹</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-events-scroll" id="cal-events"><div class="empty" style="padding:20px">روی یه روز کلیک کن</div></div>
+  </div>
 
-<button class="fab" id="fab">+</button>
+  <!-- ── PAGE 3: HABITS ── -->
+  <div class="page" id="p-hab">
+    <div class="hdr">✅ ردیاب عادت‌ها</div>
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="h-next">›</button>
+      <span class="cal-month" id="h-title"></span>
+      <button class="cal-nav-btn" id="h-prev">‹</button>
+    </div>
+    <div class="hab-grid-wrap"><div class="hab-grid" id="h-grid"><div class="spin"></div></div></div>
+  </div>
 
+</div><!-- /pages -->
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-btn active" data-page="tasks">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="14" y2="13"/></svg>
+    تسک‌ها
+  </button>
+  <button class="nav-btn" data-page="cal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    تقویم
+  </button>
+  <button class="nav-btn" data-page="hab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    عادت‌ها
+  </button>
+</nav>
+
+<!-- OVERLAY + SHEET -->
 <div class="overlay" id="overlay"></div>
 <div class="sheet" id="sheet">
   <div class="handle"></div>
-  <label>عنوان تسک *</label>
-  <input id="iTitle" placeholder="مثلاً: بررسی وبسایت..." autocomplete="off"/>
-  <label>ددلاین (شمسی)</label>
-  <input id="iDl" placeholder="مثلاً: 1405/03/20" autocomplete="off"/>
-  <label>مسئول</label>
-  <input id="iWho" placeholder="مثلاً: علی" autocomplete="off"/>
-  <div class="acts">
-    <button class="bcancel" onclick="closeSheet()">لغو</button>
-    <button class="bsave" onclick="saveTask()">✓ ذخیره</button>
-  </div>
+  <div id="sheet-content"></div>
 </div>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────────────
-// این دو متغیر رو بعد از deploy عوض کن:
+// ══ CONFIG ══════════════════════════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycby2qYDm5jplLBZPWynKuADji04f3yj83mx7p4FkNsE1JhlJhNjoUwVWDO2lJtBh69fIvw/exec';
 const KEY = 'monazam2025secret';
-// ──────────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
 
 const tg = window.Telegram.WebApp;
 tg.ready(); tg.expand();
-try{tg.setHeaderColor('#1a2218');tg.setBackgroundColor('#1a2218');}catch(e){}
+try{tg.setHeaderColor('#141a12');tg.setBackgroundColor('#141a12');}catch(e){}
 
-let tasks=[], filter='all';
-const todayG=new Date(); todayG.setHours(0,0,0,0);
-const weekG=new Date(todayG); weekG.setDate(todayG.getDate()+7);
+// ── JALALI UTILS ─────────────────────────────────────────────────────
+const JM = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const JD = ['ش','ی','د','س','چ','پ','ج'];
+const COLORS = ['#5cb85c','#5bc0de','#f0ad4e','#d9534f','#9b59b6','#1abc9c','#e91e63','#3f51b5','#795548','#607d8b'];
 
-function gDate(s){if(!s)return null;const d=new Date(s);d.setHours(0,0,0,0);return isNaN(d)?null:d;}
-
-function getFiltered(){
-  return tasks.filter(t=>{
-    const dl=gDate(t.deadline_greg),done=t.status==='done';
-    if(filter==='done')return done;
-    if(done)return false;
-    if(filter==='all')return true;
-    if(!dl)return filter==='all';
-    if(filter==='today')return dl<=todayG;
-    if(filter==='week')return dl>todayG&&dl<=weekG;
-    if(filter==='overdue')return dl<todayG;
-    return true;
-  });
+function jalCal(jy){
+  const br=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+  let lJ=-14,jp=br[0],jm,jump,leap;
+  for(let i=1;i<br.length;i++){jm=br[i];jump=jm-jp;if(jy<jm)break;lJ+=Math.floor(jump/33)*8+Math.floor((jump%33)/4);jp=jm;}
+  const n=jy-jp;lJ+=Math.floor(n/33)*8+Math.floor((n%33+3)/4);
+  const lG=Math.floor((jy+621)/4)-Math.floor((Math.floor((jy+621)/100)+1)*3/4)-150;
+  const march=20+lJ-lG;
+  leap=((n+1)%33-1)%4;if(leap===-1)leap=4;
+  return{leap,gy:jy+621,march};
 }
+function g2d(gy,gm,gd){let d=Math.floor((gy+Math.floor((gm-8)/6)+100100)*1461/4)+Math.floor((153*((gm+9)%12)+2)/5)+gd-34840408;d=d-Math.floor((Math.floor((gy+100100+Math.floor((gm-8)/6))/100)*3)/4)+752;return d;}
+function d2g(jdn){let j=4*jdn+139361631;j=j+Math.floor((Math.floor((4*jdn+183628)/146097)*3)/4)*4-3908;const i=Math.floor((j%1461)/4)*5+308;const gd=Math.floor((i%153)/5)+1;const gm=Math.floor(i/153)%12;const gy=Math.floor(j/1461)-100100+Math.floor((8-gm)/6);return{gy,gm:gm+1,gd};}
+function j2d(jy,jm,jd){const r=jalCal(jy);return g2d(r.gy,3,r.march)+(jm-1)*31-Math.floor(jm/7)*(jm-7)+jd-1;}
+function d2j(jdn){const r0=d2g(jdn);const gy=r0.gy;let jy=gy-621;const r=jalCal(jy);const jdn1f=g2d(gy,3,r.march);let day=jdn-jdn1f;if(day>=0){if(day<=185){const jm=1+Math.floor(day/31);return{jy,jm,jd:day%31+1};}day-=186;}else{jy-=1;day+=179;if(r.leap===1)day+=1;}const jm=7+Math.floor(day/30);return{jy,jm,jd:day%30+1};}
+function toJ(gy,gm,gd){return d2j(g2d(gy,gm,gd));}
+function toG(jy,jm,jd){const jdn=j2d(jy,jm,jd);return d2g(jdn);}
+function jMonthDays(jy,jm){if(jm<=6)return 31;if(jm<=11)return 30;return jalCal(jy).leap===0?30:29;}
+function pyWdToJal(wd){return{5:0,6:1,0:2,1:3,2:4,3:5,4:6}[wd];}// Mon=0 → Sat=0
 
-function dlCls(greg){
-  const d=gDate(greg);
-  if(!d)return'';
-  if(d<todayG)return'overdue';
-  if(d.getTime()===todayG.getTime())return'today';
-  return'';
-}
+function todayJ(){const n=new Date();return toJ(n.getFullYear(),n.getMonth()+1,n.getDate());}
+function gregIso(gy,gm,gd){return`${gy}-${String(gm).padStart(2,'0')}-${String(gd).padStart(2,'0')}`;}
+function parseIso(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);dt.setHours(0,0,0,0);return dt;}
+function todayIso(){const n=new Date();return gregIso(n.getFullYear(),n.getMonth()+1,n.getDate());}
+function jalaliStrToIso(s){if(!s)return'';const p=s.replace(/-/g,'/').split('/');if(p.length!==3)return'';const g=toG(+p[0],+p[1],+p[2]);return gregIso(g.gy,g.gm,g.gd);}
 
-function render(){
-  const items=getFiltered();
-  document.getElementById('hcount').textContent=items.length?`${items.length} مورد`:'';
-  const msgs={all:'هیچ تسکی نیست',today:'امروز تسکی نیست',week:'این هفته تسکی نیست',overdue:'تسک معوقی نیست ✅',done:'هنوز تسکی انجام نشده'};
-  if(!items.length){document.getElementById('list').innerHTML=`<div class="empty">${msgs[filter]||'موردی نیست'}</div>`;return;}
-  document.getElementById('list').innerHTML=items.map(t=>{
-    const done=t.status==='done',cls=dlCls(t.deadline_greg);
-    const dl=t.deadline?`<div class="tmeta ${cls}">📅 ${t.deadline}</div>`:'';
-    const who=t.assigned_to?`<span class="badge">👤 ${t.assigned_to}</span>`:'';
-    return`<div class="task ${done?'done':''}" id="t${t.id}">
-      <div class="chk ${done?'on':''}" onclick="toggle(${t.id})"></div>
-      <div class="tbody"><div class="ttitle ${done?'done':''}">${t.title}</div>${dl}${who}</div>
-      <div class="del" onclick="del(${t.id})">🗑</div>
-    </div>`;
-  }).join('');
-}
-
+// ── API ───────────────────────────────────────────────────────────────
 async function call(params){
-  const qs=new URLSearchParams({...params,key:KEY}).toString();
+  const qs=new URLSearchParams({...params,key:KEY});
   const r=await fetch(`${API}?${qs}`);
   return r.json();
 }
 
-async function load(){
-  try{
-    const res=await call({action:'get_tasks'});
-    tasks=res.data||[];
-    render();
-  }catch(e){
-    document.getElementById('list').innerHTML='<div class="empty">❌ خطا در بارگذاری<br><small>اتصال اینترنت رو چک کن</small></div>';
-  }
+// ── STATE ─────────────────────────────────────────────────────────────
+let tasks=[], habits=[], habitLog={};
+const tj=todayJ();
+let calYear=tj.jy, calMonth=tj.jm;
+let habYear=tj.jy, habMonth=tj.jm;
+let taskFilter='all';
+let selectedDay=null;
+
+const todayStr=todayIso();
+const todayDate=parseIso(todayStr);
+const weekEnd=new Date(todayDate); weekEnd.setDate(todayDate.getDate()+7);
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────
+async function loadAll(){
+  const [tr,hr]=await Promise.all([
+    call({action:'get_tasks'}).catch(()=>({data:[]})),
+    call({action:'get_habit_list'}).catch(()=>({data:[]})),
+  ]);
+  tasks=(tr.data||[]);
+  habits=(hr.data||[]);
+  renderTasks();
+  renderCal();
+  loadHabitLog();
 }
 
-async function toggle(id){
+async function loadHabitLog(){
+  const res=await call({action:'get_habit_log',year:habYear,month:habMonth}).catch(()=>({data:{}}));
+  habitLog=res.data||{};
+  renderHabits();
+}
+
+// ── TASKS ─────────────────────────────────────────────────────────────
+function filteredTasks(){
+  return tasks.filter(t=>{
+    const dl=parseIso(t.deadline_greg),done=t.status==='done';
+    if(taskFilter==='done')return done;
+    if(done)return false;
+    if(taskFilter==='all')return true;
+    if(!dl)return taskFilter==='all';
+    if(taskFilter==='today')return dl<=todayDate;
+    if(taskFilter==='week')return dl>todayDate&&dl<=weekEnd;
+    if(taskFilter==='overdue')return dl<todayDate;
+    return true;
+  });
+}
+
+function dlCls(greg){const d=parseIso(greg);if(!d)return'';if(d<todayDate)return'ov';if(d.getTime()===todayDate.getTime())return'td';return'';}
+
+function renderTasks(){
+  const items=filteredTasks();
+  document.getElementById('t-count').textContent=items.length?`${items.length} مورد`:'';
+  const msgs={all:'هیچ تسکی نیست',today:'امروز تسکی نیست',week:'این هفته تسکی نیست',overdue:'تسک معوقی نیست ✅',done:'هنوز تسکی انجام نشده'};
+  if(!items.length){document.getElementById('t-list').innerHTML=`<div class="empty">${msgs[taskFilter]||'موردی نیست'}</div>`;return;}
+  document.getElementById('t-list').innerHTML=items.map(t=>{
+    const done=t.status==='done',cls=dlCls(t.deadline_greg);
+    const dl=t.deadline?`<div class="tmeta ${cls}">📅 ${t.deadline}</div>`:'';
+    const who=t.assigned_to?`<span class="bdg">👤 ${t.assigned_to}</span>`:'';
+    return`<div class="task ${done?'done':''}" id="t${t.id}">
+      <div class="chk ${done?'on':''}" onclick="toggleTask(${t.id})"></div>
+      <div class="tbody"><div class="ttl ${done?'done':''}">${t.title}</div>${dl}${who}</div>
+      <div class="del" onclick="delTask(${t.id})">🗑</div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleTask(id){
   const t=tasks.find(x=>x.id==id);if(!t||t.status==='done')return;
-  t.status='done';render();
-  await call({action:'complete_task',id}).catch(()=>{t.status='pending';render();});
+  t.status='done';renderTasks();renderCal();
+  await call({action:'complete_task',id}).catch(()=>{t.status='pending';renderTasks();});
 }
 
-async function del(id){
-  tasks=tasks.filter(t=>t.id!=id);render();
+async function delTask(id){
+  tasks=tasks.filter(t=>t.id!=id);renderTasks();renderCal();
   await call({action:'delete_task',id}).catch(()=>{});
 }
 
+// ── CALENDAR ─────────────────────────────────────────────────────────
+function tasksByDay(){
+  const map={};
+  tasks.filter(t=>t.status!=='done'&&t.deadline_greg).forEach(t=>{
+    map[t.deadline_greg]=(map[t.deadline_greg]||[]).concat(t);
+  });
+  return map;
+}
+
+function renderCal(){
+  const nd=jMonthDays(calYear,calMonth);
+  const firstG=toG(calYear,calMonth,1);
+  const firstDate=new Date(firstG.gy,firstG.gm-1,firstG.gd);
+  const firstJwd=pyWdToJal(firstDate.getDay()===0?6:firstDate.getDay()-1); // JS: Sun=0
+
+  document.getElementById('cal-title').textContent=`${JM[calMonth-1]} ${calYear}`;
+  const byDay=tasksByDay();
+  const todJ=todayJ();
+
+  let html='';
+  // Weekday headers
+  JD.forEach((d,i)=>html+=`<div class="cal-dh${i===6?' fri':''}">${d}</div>`);
+  // Empty cells before first day
+  for(let i=0;i<firstJwd;i++)html+=`<div class="cal-day empty"></div>`;
+  // Days
+  for(let d=1;d<=nd;d++){
+    const g=toG(calYear,calMonth,d);
+    const iso=gregIso(g.gy,g.gm,g.gd);
+    const isToday=(calYear===todJ.jy&&calMonth===todJ.jm&&d===todJ.jd);
+    const isSel=(selectedDay&&selectedDay.jy===calYear&&selectedDay.jm===calMonth&&selectedDay.jd===d);
+    const hasTasks=!!byDay[iso];
+    html+=`<div class="cal-day${isToday?' today':''}${isSel&&!isToday?' selected':''}" onclick="selectDay(${calYear},${calMonth},${d},'${iso}')">
+      <div class="cal-dn">${d}</div>
+      ${hasTasks?'<div class="cal-dot"></div>':'<div style="height:7px"></div>'}
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  if(selectedDay)showDayEvents(selectedDay.iso);
+}
+
+function selectDay(jy,jm,jd,iso){
+  selectedDay={jy,jm,jd,iso};
+  renderCal();
+  showDayEvents(iso);
+}
+
+function showDayEvents(iso){
+  const j=d2j(g2d(...iso.split('-').map(Number)));
+  const dayTasks=tasks.filter(t=>t.deadline_greg===iso&&t.status!=='done');
+  let html=`<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:var(--accent)">${j.jd} ${JM[j.jm-1]} ${j.jy}</div>`;
+  if(dayTasks.length){
+    html+=dayTasks.map(t=>`<div class="task-mini"><div class="chk" style="width:18px;height:18px;flex-shrink:0" onclick="toggleTask(${t.id})"></div>${t.title}</div>`).join('');
+  }else{
+    html+=`<div style="color:var(--sub);font-size:13px;padding:8px 0">تسکی برای این روز نیست</div>`;
+  }
+  html+=`<button class="add-day-btn" onclick="openAddTask('${iso}')">+ افزودن تسک برای این روز</button>`;
+  document.getElementById('cal-events').innerHTML=html;
+}
+
+// ── HABITS ───────────────────────────────────────────────────────────
+function renderHabits(){
+  document.getElementById('h-title').textContent=`${JM[habMonth-1]} ${habYear}`;
+  const nd=jMonthDays(habYear,habMonth);
+  const todJ=todayJ();
+
+  if(!habits.length){
+    document.getElementById('h-grid').innerHTML='<div class="empty">هنوز عادتی تعریف نشده<br>از بات عادت اضافه کن</div>';
+    return;
+  }
+
+  // CSS grid: first col = habit names, rest = days
+  const cols=1+nd;
+  let style=`grid-template-columns: 100px ${Array(nd).fill('28px').join(' ')};grid-template-rows:auto ${Array(habits.length).fill('36px').join(' ')};`;
+
+  let html=`<div class="hab-grid" style="${style}">`;
+  // Corner
+  html+=`<div class="hab-corner">عادت / روز</div>`;
+  // Day headers
+  for(let d=1;d<=nd;d++){
+    const g=toG(habYear,habMonth,d);
+    const iso=gregIso(g.gy,g.gm,g.gd);
+    const isToday=(habYear===todJ.jy&&habMonth===todJ.jm&&d===todJ.jd);
+    html+=`<div class="hab-dh${isToday?' today-col':''}">${d}</div>`;
+  }
+  // Habit rows
+  habits.forEach((hname,hi)=>{
+    const color=COLORS[hi%COLORS.length];
+    html+=`<div class="hab-name" title="${hname}">${hname}</div>`;
+    for(let d=1;d<=nd;d++){
+      const g=toG(habYear,habMonth,d);
+      const iso=gregIso(g.gy,g.gm,g.gd);
+      const gDate=new Date(g.gy,g.gm-1,g.gd);
+      const isFuture=gDate>todayDate;
+      const isDone=(habitLog[iso]||[]).includes(hname);
+      let cls='hab-cell';
+      let style2='';
+      if(isFuture){cls+=' future';}
+      else if(isDone){cls+=' done-cell';style2=`background:${color};`;}
+      else{cls+=' empty-past';style2=`border:2px solid ${color};`;}
+      html+=`<div class="${cls}" style="${style2}" onclick="toggleHabit('${hname}','${iso}',${hi})"></div>`;
+    }
+  });
+  html+='</div>';
+  document.getElementById('h-grid').innerHTML=html;
+}
+
+async function toggleHabit(hname,iso,hi){
+  const log=habitLog[iso]||(habitLog[iso]=[]);
+  const idx=log.indexOf(hname);
+  if(idx>=0)log.splice(idx,1);else log.push(hname);
+  renderHabits();
+  await call({action:'toggle_habit',habit_name:hname,date:iso}).catch(()=>{});
+}
+
+// ── ADD TASK SHEET ────────────────────────────────────────────────────
+function openAddTask(prefillDate){
+  document.getElementById('sheet-content').innerHTML=`
+    <div class="sh-title">➕ تسک جدید</div>
+    <label class="shlbl">عنوان تسک *</label>
+    <input class="shin" id="si-title" placeholder="مثلاً: بررسی وبسایت..." autocomplete="off"/>
+    <label class="shlbl">ددلاین (شمسی)</label>
+    <input class="shin" id="si-dl" value="${prefillDate?isoToJalaliStr(prefillDate):''}" placeholder="مثلاً: 1405/03/20" autocomplete="off"/>
+    <label class="shlbl">مسئول</label>
+    <input class="shin" id="si-who" placeholder="مثلاً: علی" autocomplete="off"/>
+    <div class="shbtns">
+      <button class="bcnl" onclick="closeSheet()">لغو</button>
+      <button class="bsave" onclick="saveTask()">✓ ذخیره</button>
+    </div>`;
+  openSheet();
+  setTimeout(()=>document.getElementById('si-title').focus(),300);
+}
+
+function isoToJalaliStr(iso){
+  if(!iso)return'';
+  const[y,m,d]=iso.split('-').map(Number);
+  const j=toJ(y,m,d);
+  return`${j.jy}/${String(j.jm).padStart(2,'0')}/${String(j.jd).padStart(2,'0')}`;
+}
+
 async function saveTask(){
-  const title=document.getElementById('iTitle').value.trim();
-  if(!title){document.getElementById('iTitle').focus();return;}
-  const dl=document.getElementById('iDl').value.trim();
-  const who=document.getElementById('iWho').value.trim();
+  const title=document.getElementById('si-title').value.trim();
+  if(!title){document.getElementById('si-title').focus();return;}
+  const dl=document.getElementById('si-dl').value.trim();
+  const who=document.getElementById('si-who').value.trim();
   try{
     const res=await call({action:'add_task',title,deadline:dl||'',assigned_to:who||''});
     if(res.data)tasks.unshift(res.data);
-    render();closeSheet();
-    ['iTitle','iDl','iWho'].forEach(id=>document.getElementById(id).value='');
+    renderTasks();renderCal();
+    closeSheet();
   }catch(e){alert('خطا در ذخیره');}
 }
 
-document.getElementById('fab').onclick=openSheet;
-document.getElementById('overlay').onclick=closeSheet;
-function openSheet(){document.getElementById('sheet').classList.add('open');document.getElementById('overlay').classList.add('show');setTimeout(()=>document.getElementById('iTitle').focus(),300);}
+// ── SHEET CONTROL ─────────────────────────────────────────────────────
+function openSheet(){document.getElementById('sheet').classList.add('open');document.getElementById('overlay').classList.add('show');}
 function closeSheet(){document.getElementById('sheet').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');filter=t.dataset.f;render();};
+// ── NAVIGATION ────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const p=btn.dataset.page;
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('show'));
+    btn.classList.add('active');
+    document.getElementById(`p-${p}`).classList.add('show');
+  });
 });
-document.getElementById('iTitle').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
 
-load();
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on'); taskFilter=t.dataset.f; renderTasks();
+  };
+});
+
+document.getElementById('t-fab').onclick=()=>openAddTask('');
+document.getElementById('overlay').onclick=closeSheet;
+
+// Calendar nav
+document.getElementById('cal-prev').onclick=()=>{calMonth--;if(calMonth<1){calMonth=12;calYear--;}renderCal();};
+document.getElementById('cal-next').onclick=()=>{calMonth++;if(calMonth>12){calMonth=1;calYear++;}renderCal();};
+
+// Habit nav
+document.getElementById('h-prev').onclick=()=>{habMonth--;if(habMonth<1){habMonth=12;habYear--;}loadHabitLog();};
+document.getElementById('h-next').onclick=()=>{habMonth++;if(habMonth>12){habMonth=1;habYear++;}loadHabitLog();};
+
+// ── INIT ──────────────────────────────────────────────────────────────
+loadAll();
 </script>
 </body>
 </html>
