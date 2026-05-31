@@ -1,0 +1,6 @@
+python-telegram-bot==21.10
+gspread==6.2.1
+google-auth==2.27.0
+python-dotenv==1.0.0
+tzdata==2026.2
+jdatetime==5.3.0
