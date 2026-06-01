@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import jdatetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, CallbackQueryHandler,
     ConversationHandler, filters, ContextTypes,
@@ -41,7 +41,8 @@ JALALI_MONTHS = sheets.JALALI_MONTHS
 def allowed(uid): return not ALLOWED or uid in ALLOWED
 
 def main_kb():
-    return InlineKeyboardMarkup([
+    webapp_url = os.getenv('WEBAPP_URL', os.getenv('WEBHOOK_URL', '')).strip().rstrip('/')
+    rows = [
         [InlineKeyboardButton('➕ تسک جدید',   callback_data='add_task'),
          InlineKeyboardButton('📅 رویداد جدید', callback_data='add_event')],
         [InlineKeyboardButton('✅ ثبت عادت‌های امروز', callback_data='log_habits')],
@@ -51,7 +52,13 @@ def main_kb():
          InlineKeyboardButton('📌 تسک‌ها',      callback_data='list_tasks')],
         [InlineKeyboardButton('🗓 رویدادها',    callback_data='list_events'),
          InlineKeyboardButton('🔄 داشبورد',     callback_data='refresh_dash')],
-    ])
+    ]
+    if webapp_url:
+        rows.insert(0, [InlineKeyboardButton(
+            '📱 باز کردن اپ تسک‌ها',
+            web_app=WebAppInfo(url=f'{webapp_url}/')
+        )])
+    return InlineKeyboardMarkup(rows)
 
 def back_kb(): return InlineKeyboardMarkup([[InlineKeyboardButton('🔙 منو', callback_data='back_menu')]])
 
@@ -82,6 +89,10 @@ def _run_bg(fn, *args):
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if not allowed(update.effective_user.id):
         await update.message.reply_text('⛔ دسترسی غیرمجاز.'); return ConversationHandler.END
+    u = update.effective_user
+    _run_bg(sheets.register_user, u.id,
+            f'{u.first_name or ""} {u.last_name or ""}'.strip() or u.username or str(u.id),
+            u.username or '')
     ctx.user_data.clear()
     await update.message.reply_text('👋 سلام! MonazamBot اینجاست.\nاز منو انتخاب کن:', reply_markup=main_kb())
     return MENU
@@ -477,8 +488,43 @@ def main():
         allow_reentry=True,
     )
     app.add_handler(conv)
+
+    async def _send_reminders(ctx: ContextTypes.DEFAULT_TYPE):
+        try:
+            tasks_due = sheets.get_pending_reminders()
+        except Exception:
+            return
+        for t in tasks_due:
+            uid = str(t.get('created_by_user_id', '')).strip()
+            auid = str(t.get('assigned_user_id', '')).strip()
+            text = f'⏰ یادآوری تسک:\n📌 {t.get("title", "")}'
+            if t.get('deadline'):
+                text += f'\n📅 ددلاین: {sheets.greg_str_to_jalali_verbose(t["deadline"])}'
+            notified = set()
+            for chat_id in [uid, auid]:
+                if chat_id and chat_id.isdigit() and chat_id not in notified:
+                    try:
+                        await ctx.bot.send_message(chat_id=int(chat_id), text=text)
+                        notified.add(chat_id)
+                    except Exception as e:
+                        logger.warning(f'Reminder send error {chat_id}: {e}')
+            sheets.mark_reminder_sent(int(t.get('id', 0)))
+
+    app.job_queue.run_repeating(_send_reminders, interval=60, first=15)
     logger.info('MonazamBot started.')
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+
+    webhook_url = os.getenv('WEBHOOK_URL', '').strip()
+    if webhook_url:
+        port = int(os.getenv('PORT', 8080))
+        logger.info(f'Webhook mode: {webhook_url} port {port}')
+        app.run_webhook(
+            listen='0.0.0.0',
+            port=port,
+            webhook_url=webhook_url,
+            allowed_updates=Update.ALL_TYPES,
+        )
+    else:
+        app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == '__main__':

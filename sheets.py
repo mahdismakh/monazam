@@ -92,12 +92,15 @@ def get_wb():
 
 # ---------- Tasks ----------
 
-def add_task(title: str, deadline: str = None, assigned_to: str = None, priority: str = 'medium') -> int:
+def add_task(title: str, deadline: str = None, assigned_to: str = None,
+             priority: str = 'medium', reminder_at: str = None,
+             created_by_user_id: str = None, assigned_user_id: str = None) -> int:
     ws = get_wb().worksheet('tasks')
     rows = ws.get_all_values()
     new_id = len(rows)
     now = datetime.now(IRAN_TZ).strftime('%Y-%m-%d %H:%M')
-    ws.append_row([new_id, title, deadline or '', assigned_to or '', 'pending', priority, now])
+    ws.append_row([new_id, title, deadline or '', assigned_to or '', 'pending', priority, now,
+                   reminder_at or '', created_by_user_id or '', assigned_user_id or '', ''])
     return new_id
 
 
@@ -129,12 +132,23 @@ def delete_task(task_id: int) -> bool:
     return False
 
 
-def update_task(task_id: int, title: str, deadline: str, assigned_to: str) -> bool:
+def update_task(task_id: int, title: str, deadline: str, assigned_to: str,
+                reminder_at: str = '', assigned_user_id: str = '') -> bool:
     ws = get_wb().worksheet('tasks')
     rows = ws.get_all_values()
+    headers = rows[0] if rows else []
     for i, row in enumerate(rows[1:], start=2):
         if str(row[0]) == str(task_id):
             ws.update(f'B{i}:D{i}', [[title, deadline or '', assigned_to or '']])
+            try:
+                if 'reminder_at' in headers:
+                    ws.update_cell(i, headers.index('reminder_at') + 1, reminder_at or '')
+                if 'assigned_user_id' in headers:
+                    ws.update_cell(i, headers.index('assigned_user_id') + 1, assigned_user_id or '')
+                if 'reminder_sent' in headers:
+                    ws.update_cell(i, headers.index('reminder_sent') + 1, '')
+            except Exception:
+                pass
             return True
     return False
 
@@ -159,6 +173,91 @@ def update_event(event_id: int, title: str, event_date: str, event_time: str) ->
             ws.update(f'B{i}:D{i}', [[title, event_date, event_time or '']])
             return True
     return False
+
+
+def register_user(user_id: int, name: str, username: str = ''):
+    try:
+        ws = get_wb().worksheet('users')
+        rows = ws.get_all_records()
+        for r in rows:
+            if str(r.get('user_id')) == str(user_id):
+                return
+        ws.append_row([user_id, name, username or ''])
+    except Exception as e:
+        logger.warning(f'register_user error: {e}')
+
+
+def get_users() -> list:
+    try:
+        ws = get_wb().worksheet('users')
+        rows = ws.get_all_records()
+        return [{'id': r['user_id'], 'name': r['name'], 'username': r.get('username', '')}
+                for r in rows if r.get('user_id')]
+    except Exception:
+        return []
+
+
+def get_habits_week(week_start_greg: str) -> dict:
+    from datetime import timedelta
+    try:
+        start = datetime.strptime(week_start_greg, '%Y-%m-%d').date()
+    except Exception:
+        start = datetime.now(IRAN_TZ).date()
+    dates = [(start + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+    habits = get_habits_list()
+    try:
+        ws = get_wb().worksheet('habits')
+        rows = ws.get_all_records()
+    except Exception:
+        rows = []
+    logged: dict = {}
+    for r in rows:
+        if r.get('date') in dates and str(r.get('completed', '')).upper() == 'TRUE':
+            logged.setdefault(r.get('habit_name', ''), set()).add(r['date'])
+    log = {h: [d in logged.get(h, set()) for d in dates] for h in habits}
+    return {'habits': habits, 'log': log, 'dates': dates}
+
+
+def get_pending_reminders() -> list:
+    try:
+        ws = get_wb().worksheet('tasks')
+        rows = ws.get_all_values()
+        headers = rows[0] if rows else []
+        records = ws.get_all_records()
+    except Exception:
+        return []
+    now = datetime.now(IRAN_TZ)
+    result = []
+    for r in records:
+        if r.get('status') == 'done':
+            continue
+        reminder = str(r.get('reminder_at', '')).strip()
+        if not reminder or str(r.get('reminder_sent', '')).upper() == 'TRUE':
+            continue
+        try:
+            rt = datetime.strptime(reminder, '%Y-%m-%d %H:%M').replace(tzinfo=IRAN_TZ)
+            diff = (now - rt).total_seconds()
+            if 0 <= diff < 120:
+                result.append(r)
+        except Exception:
+            pass
+    return result
+
+
+def mark_reminder_sent(task_id: int):
+    try:
+        ws = get_wb().worksheet('tasks')
+        rows = ws.get_all_values()
+        headers = rows[0] if rows else []
+        if 'reminder_sent' not in headers:
+            return
+        col = headers.index('reminder_sent') + 1
+        for i, row in enumerate(rows[1:], start=2):
+            if str(row[0]) == str(task_id):
+                ws.update_cell(i, col, 'TRUE')
+                return
+    except Exception as e:
+        logger.warning(f'mark_reminder_sent error: {e}')
 
 
 def get_month_habits_log(jyear: int, jmonth: int, num_days: int) -> set:

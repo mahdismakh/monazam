@@ -5,19 +5,27 @@ function doGet(e) {
   const out = ContentService.createTextOutput();
   out.setMimeType(ContentService.MimeType.JSON);
   try {
-    if (e.parameter.key !== SECRET) { out.setContent(JSON.stringify({ok:false,error:'Unauthorized'})); return out; }
+    if (e.parameter.key !== SECRET) {
+      out.setContent(JSON.stringify({ok:false,error:'Unauthorized'})); return out;
+    }
     const action = e.parameter.action || '';
     let data;
-    if      (action==='get_tasks')     data=getTasks();
-    else if (action==='add_task')      data=addTask(e.parameter.title,e.parameter.deadline,e.parameter.assigned_to);
-    else if (action==='complete_task') data=completeTask(+e.parameter.id);
-    else if (action==='delete_task')   data=deleteTask(+e.parameter.id);
-    else if (action==='get_habit_list') data=getHabitList();
-    else if (action==='get_habit_log')  data=getHabitLog(+e.parameter.year,+e.parameter.month);
-    else if (action==='toggle_habit')   data=toggleHabit(e.parameter.habit_name,e.parameter.date);
-    else data=null;
+    if      (action==='get_tasks')       data = getTasks();
+    else if (action==='add_task')        data = addTask(e.parameter);
+    else if (action==='edit_task')       data = editTask(e.parameter);
+    else if (action==='complete_task')   data = completeTask(+e.parameter.id);
+    else if (action==='delete_task')     data = deleteTask(+e.parameter.id);
+    else if (action==='get_habit_list')  data = getHabitList();
+    else if (action==='add_habit')       data = addHabit(e.parameter.name);
+    else if (action==='get_habit_week')  data = getHabitWeek(e.parameter.dates);
+    else if (action==='get_habit_log')   data = getHabitLog(+e.parameter.year, +e.parameter.month);
+    else if (action==='toggle_habit')    data = toggleHabit(e.parameter.habit_name, e.parameter.date);
+    else if (action==='get_users')       data = getUsers();
+    else data = null;
     out.setContent(JSON.stringify({ok:true,data}));
-  } catch(err) { out.setContent(JSON.stringify({ok:false,error:err.message})); }
+  } catch(err) {
+    out.setContent(JSON.stringify({ok:false,error:err.message}));
+  }
   return out;
 }
 
@@ -41,30 +49,7 @@ function jalaliToGregorian(jy,jm,jd){
   return new Date(gy,gm2-1,gd);
 }
 
-function jMonthDays(jy,jm){return jm<=6?31:jm<=11?30:29;}// simplified
-
-function isoDate(d){return Utilities.formatDate(d,'Asia/Tehran','yyyy-MM-dd');}
-
-function parseJalali(s){
-  if(!s)return null;
-  const p=s.replace(/-/g,'/').split('/');
-  if(p.length!==3)return null;
-  try{return jalaliToGregorian(+p[0],+p[1],+p[2]);}catch(e){return null;}
-}
-
-// ── Sheet helper ──────────────────────────────────────────────────────
-function ws(name){return SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);}
-
-// ── Tasks ─────────────────────────────────────────────────────────────
-function rowToTask(r){
-  const dg=r[2]||'';
-  let djl='';
-  if(dg){try{const d=new Date(dg);const j=toJalali(d);djl=`${j[0]}/${pad(j[1])}/${pad(j[2])}`;}catch(e){djl=dg;}}
-  return{id:+r[0],title:r[1]||'',deadline:djl,deadline_greg:dg,assigned_to:r[3]||'',status:r[4]||'pending',priority:r[5]||'medium'};
-}
-
 function toJalali(d){
-  // Simple Gregorian → Jalali (approximate, using month approximation)
   const gy=d.getFullYear(),gm=d.getMonth()+1,gd=d.getDate();
   let jy=gy-621,jm,jday;
   const g_d=[0,31,59,90,120,151,181,212,243,273,304,334];
@@ -81,22 +66,88 @@ function toJalali(d){
 }
 
 function pad(n){return String(n).padStart(2,'0');}
+function isoDate(d){return Utilities.formatDate(d,'Asia/Tehran','yyyy-MM-dd');}
+function isoNow(){return Utilities.formatDate(new Date(),'Asia/Tehran','yyyy-MM-dd HH:mm');}
 
-function getTasks(){
-  const rows=ws('tasks').getDataRange().getValues().slice(1);
-  return rows.filter(r=>r[0]!==''&&r[0]!=='id').map(rowToTask);
+function parseJalali(s){
+  if(!s)return null;
+  const p=s.replace(/-/g,'/').split('/');
+  if(p.length!==3)return null;
+  try{return jalaliToGregorian(+p[0],+p[1],+p[2]);}catch(e){return null;}
 }
 
-function addTask(title,deadline,assigned_to){
-  const w=ws('tasks');
-  const newId=w.getLastRow();
-  const now=Utilities.formatDate(new Date(),'Asia/Tehran','yyyy-MM-dd HH:mm');
-  let gDl='';
-  if(deadline){const d=parseJalali(deadline);if(d)gDl=isoDate(d);}
-  w.appendRow([newId,title||'',gDl,assigned_to||'','pending','medium',now]);
-  let djl='';
-  if(gDl){try{const d=new Date(gDl);const j=toJalali(d);djl=`${j[0]}/${pad(j[1])}/${pad(j[2])}`;}catch(e){djl=deadline;}}
-  return{id:newId,title:title||'',deadline:djl||deadline||'',deadline_greg:gDl,assigned_to:assigned_to||'',status:'pending',priority:'medium'};
+function gregToJalaliStr(gDl){
+  if(!gDl)return'';
+  try{const d=new Date(gDl);const j=toJalali(d);return`${j[0]}/${pad(j[1])}/${pad(j[2])}`;}
+  catch(e){return gDl;}
+}
+
+// ── Sheet helper ──────────────────────────────────────────────────────
+function ws(name){return SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);}
+
+// ── Tasks ─────────────────────────────────────────────────────────────
+// Columns: id(0) title(1) deadline(2) assigned_to(3) status(4) priority(5)
+//          created_at(6) reminder_at(7) created_by_user_id(8) assigned_user_id(9) reminder_sent(10)
+function rowToTask(r){
+  const dg = String(r[2]||'');
+  return {
+    id:                 +r[0],
+    title:              String(r[1]||''),
+    deadline:           gregToJalaliStr(dg),
+    deadline_greg:      dg,
+    assigned_to:        String(r[3]||''),
+    status:             String(r[4]||'pending'),
+    priority:           String(r[5]||'medium'),
+    reminder_at:        String(r[7]||''),
+    created_by_user_id: String(r[8]||''),
+    assigned_user_id:   String(r[9]||''),
+  };
+}
+
+function getTasks(){
+  const rows = ws('tasks').getDataRange().getValues().slice(1);
+  return rows.filter(r => r[0]!=='' && r[0]!=='id').map(rowToTask);
+}
+
+function addTask(p){
+  const w = ws('tasks');
+  const newId = w.getLastRow();
+  let gDl = '';
+  if(p.deadline){const d=parseJalali(p.deadline);if(d)gDl=isoDate(d);}
+  // reminder_at = deadline + reminder_time if both set
+  let reminderAt = '';
+  if(p.reminder_time && gDl) reminderAt = gDl + ' ' + p.reminder_time;
+  w.appendRow([
+    newId, p.title||'', gDl, p.assigned_to||'', 'pending', 'medium', isoNow(),
+    reminderAt, p.created_by_user_id||'', p.assigned_user_id||'', ''
+  ]);
+  return {
+    id: newId, title: p.title||'',
+    deadline: gregToJalaliStr(gDl)||p.deadline||'', deadline_greg: gDl,
+    assigned_to: p.assigned_to||'', status:'pending', priority:'medium',
+    reminder_at: reminderAt, created_by_user_id: p.created_by_user_id||'',
+    assigned_user_id: p.assigned_user_id||''
+  };
+}
+
+function editTask(p){
+  const w = ws('tasks');
+  const rows = w.getDataRange().getValues();
+  const id = +p.id;
+  for(let i=1;i<rows.length;i++){
+    if(+rows[i][0]===id){
+      let gDl = '';
+      if(p.deadline){const d=parseJalali(p.deadline);if(d)gDl=isoDate(d);}
+      let reminderAt = '';
+      if(p.reminder_time && gDl) reminderAt = gDl + ' ' + p.reminder_time;
+      // Update B:D (title, deadline, assigned_to)
+      w.getRange(i+1,2,1,3).setValues([[p.title||'', gDl, p.assigned_to||'']]);
+      // Update H:K (reminder_at, created_by_user_id, assigned_user_id, reminder_sent)
+      w.getRange(i+1,8,1,4).setValues([[reminderAt, p.created_by_user_id||rows[i][8]||'', p.assigned_user_id||'', '']]);
+      return {ok:true, deadline_greg: gDl, reminder_at: reminderAt};
+    }
+  }
+  return {ok:false};
 }
 
 function completeTask(id){
@@ -111,20 +162,49 @@ function deleteTask(id){
   return false;
 }
 
+// ── Users ─────────────────────────────────────────────────────────────
+function getUsers(){
+  try{
+    const rows = ws('users').getDataRange().getValues().slice(1);
+    return rows.filter(r=>r[0]!=='').map(r=>({id:String(r[0]),name:String(r[1]||''),username:String(r[2]||'')}));
+  }catch(e){return[];}
+}
+
 // ── Habits ────────────────────────────────────────────────────────────
 function getHabitList(){
   const rows=ws('habit_list').getDataRange().getValues().slice(1);
   return rows.filter(r=>String(r[1]).toUpperCase()==='TRUE').map(r=>r[0]);
 }
 
+function addHabit(name){
+  if(!name)return{ok:false};
+  ws('habit_list').appendRow([name,'TRUE']);
+  return{ok:true,name};
+}
+
+function getHabitWeek(datesStr){
+  // datesStr: comma-separated ISO dates, e.g. "2026-05-30,2026-05-31,...,2026-06-05"
+  const dateArr = (datesStr||'').split(',').filter(Boolean);
+  const rows = ws('habits').getDataRange().getValues().slice(1);
+  const result = {};
+  rows.forEach(r=>{
+    const d=String(r[0]),h=String(r[1]),done=String(r[2]).toUpperCase();
+    if(dateArr.includes(d)&&done==='TRUE'){
+      if(!result[d])result[d]=[];
+      result[d].push(h);
+    }
+  });
+  return result;
+}
+
 function getHabitLog(jy,jm){
-  const nd=jMonthDays(jy,jm);
-  const firstG=jalaliToGregorian(jy,jm,1);
-  const lastG=jalaliToGregorian(jy,jm,nd);
-  const firstIso=isoDate(firstG);
-  const lastIso=isoDate(lastG);
-  const rows=ws('habits').getDataRange().getValues().slice(1);
-  const result={};
+  const nd = jm<=6?31:jm<=11?30:29;
+  const firstG = jalaliToGregorian(jy,jm,1);
+  const lastG  = jalaliToGregorian(jy,jm,nd);
+  const firstIso = isoDate(firstG);
+  const lastIso  = isoDate(lastG);
+  const rows = ws('habits').getDataRange().getValues().slice(1);
+  const result = {};
   rows.forEach(r=>{
     const d=String(r[0]),h=String(r[1]),done=String(r[2]).toUpperCase();
     if(d>=firstIso&&d<=lastIso&&done==='TRUE'){
