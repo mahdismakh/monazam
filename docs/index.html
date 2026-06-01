@@ -490,7 +490,7 @@ async function loadHabits(){
   try{
     habits=await call({action:'get_habit_list'});
     const dates=weekDates(weekOff);
-    habLog=await call({action:'get_habit_week',dates:dates.join(',')});
+    habLog=await call({action:'get_habit_week',dates:dates.join(',')}) || {};
     renderHabits();
   }catch(e){
     document.getElementById('h-wrap').innerHTML='<div class="empty">❌ خطا در بارگذاری</div>';
@@ -521,7 +521,7 @@ function renderHabits(){
   habits.forEach(h=>{
     html+=`<tr><td class="hname-cell" title="${h}">${h}</td>`;
     dates.forEach((ds,i)=>{
-      const done=(habLog[ds]||[]).includes(h);
+      const done=((habLog||{})[ds]||[]).includes(h);
       const isFut=ds>todayStr;
       const isTod=ds===todayStr;
       html+=`<td><button class="hck ${done?'done':''} ${isFut?'fut':''} ${isTod&&!done?'today-cell':''}"
