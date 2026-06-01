@@ -212,12 +212,21 @@ const MY_ID   = String(tg.initDataUnsafe?.user?.id || '');
 const MY_NAME = ((tg.initDataUnsafe?.user?.first_name||'') + ' ' + (tg.initDataUnsafe?.user?.last_name||'')).trim() || 'من';
 
 // ── API helper ────────────────────────────────────────────────────────
-async function call(params){
+async function call(params, timeoutMs=12000){
   const qs = new URLSearchParams({...params, key:KEY});
-  const r = await fetch(`${API}?${qs}`);
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error||'API error');
-  return j.data;
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), timeoutMs);
+  try{
+    const r = await fetch(`${API}?${qs}`, {signal:ctrl.signal});
+    clearTimeout(timer);
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'خطای سرور');
+    return j.data;
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==='AbortError') throw new Error('اتصال قطع شد — اینترنت رو چک کن');
+    throw e;
+  }
 }
 
 // ── Jalali conversion (via jalaali-js CDN) ────────────────────────────
@@ -320,7 +329,7 @@ function renderTasks(){
 async function loadTasks(){
   document.getElementById('t-list').innerHTML='<div class="spin"></div>';
   try{tasks=await call({action:'get_tasks'});renderTasks();}
-  catch(e){document.getElementById('t-list').innerHTML='<div class="empty">❌ خطا در بارگذاری</div>';}
+  catch(e){document.getElementById('t-list').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;}
 }
 
 async function toggleTask(id){
@@ -495,7 +504,7 @@ async function loadHabits(){
     habLog=await call({action:'get_habit_week',dates:dates.join(',')}) || {};
     renderHabits();
   }catch(e){
-    document.getElementById('h-wrap').innerHTML='<div class="empty">❌ خطا در بارگذاری</div>';
+    document.getElementById('h-wrap').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadHabits()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
   }
 }
 
