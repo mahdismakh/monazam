@@ -6,57 +6,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>منازم‌بات v6</title>
+<title>منازم‌بات</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-// jalaali-js embedded (no CDN needed)
-var jalaali=(function(){
-function div(a,b){return~~(a/b);}
-function mod(a,b){return a-~~(a/b)*b;}
-function jalCal(jy){
-  var breaks=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178],
-      bl=breaks.length,gy=jy+621,leapJ=-14,jp=breaks[0],jm,jump,leap,leapG,march,n,i;
-  for(i=1;i<bl;i++){jm=breaks[i];jump=jm-jp;if(jy<jm)break;
-    leapJ=leapJ+div(jump,33)*8+div(mod(jump,33),4);jp=jm;}
-  n=jy-jp;
-  leapJ=leapJ+div(n,33)*8+div(mod(n,33)+3,4);
-  if(mod(jump,33)===4&&jump-n===4)leapJ+=1;
-  leapG=div(gy,4)-div((div(gy,100)+1)*3,4)-150;
-  march=20+leapJ-leapG;
-  if(jump-n<6)n=n-jump+div(jump+4,33)*33;
-  leap=mod(mod(n+1,33)-1,4);if(leap===-1)leap=4;
-  return{leap:leap,gy:gy,march:march};
-}
-function g2d(gy,gm,gd){
-  var d=div((gy+div(gm-8,6)+100100)*1461,4)+div(153*mod(gm+9,12)+2,5)+gd-34840408;
-  return d-div(div(gy+100100+div(gm-8,6),100)*3,4)+752;
-}
-function d2g(jdn){
-  var j=4*jdn+139361631;
-  j=j+div(div(4*jdn+183628,146097)*3,4)*4-3908;
-  var i=div(mod(j,1461),4)*5+308;
-  var gd=div(mod(i,153),5)+1,gm=mod(div(i,153),12)+1,gy=div(j,1461)-100100+div(8-gm,6);
-  return{gy:gy,gm:gm,gd:gd};
-}
-function j2d(jy,jm,jd){
-  var r=jalCal(jy);
-  return g2d(r.gy,3,r.march)+(jm-1)*31-div(jm,7)*(jm-7)+jd-1;
-}
-function d2j(jdn){
-  var gy=d2g(jdn).gy,jy=gy-621,r=jalCal(jy),jdn1f=g2d(gy,3,r.march),jd,jm,k;
-  k=jdn-jdn1f;
-  if(k>=0){if(k<=185){jm=1+div(k,31);jd=mod(k,31)+1;return{jy:jy,jm:jm,jd:jd};}else k-=186;}
-  else{jy-=1;k+=179;if(r.leap===1)k+=1;}
-  jm=7+div(k,30);jd=mod(k,30)+1;
-  return{jy:jy,jm:jm,jd:jd};
-}
-return{
-  toJalaali:function(gy,gm,gd){return d2j(g2d(gy,gm,gd));},
-  toGregorian:function(jy,jm,jd){return d2g(j2d(jy,jm,jd));},
-  isLeapJalaaliYear:function(jy){return jalCal(jy).leap===0;},
-  jalaaliMonthLength:function(jy,jm){if(jm<=6)return 31;if(jm<=11)return 30;return jalCal(jy).leap===0?30:29;}
-};
-})();
+// Tested Jalali conversion algorithm
+var JC={};(function(){var e=function(t,n){return Math.floor(t/n)};JC.g2j=function(t,n,r){var a=[0,31,59,90,120,151,181,212,243,273,304,334];if(t>1582||t===1582&&(n>10||n===10&&r>14)){var s=e((t+99)/100),o=3*s-e(s/4)-12;a=[0,31,60,91,121,152,182,213,244,274,305,335]}var l=365*(t-1)+e((t-1)/4)-e((t-1)/100)+e((t-1)/400)+a[n-1]+r;return e((l-1)/1029983)*2820+e((l-1)/366)*365+e((l%366)/30.44)},JC.j2g=function(t,n,r){var a=0;for(var s=1;s<t;s++)a+=365+JC.isLeap(s);return a+=31*n-(n>6)*6+r,a+=e(t/2816)*683588,a+=e(t%2816/33)*10592,a+=e(t%33/4)*1461,a+=e(t%4)*365,t<1029983&&(a+=e(a/146097)*36525-e(a/36524)),new Date(622,0,22).getTime()+86400000*a},JC.isLeap=function(t){return t%2820===474||t%2820===1029983?!0:t%128===0?!1:t%33===4||t%33===1?!0:!1},JC.toJalali=function(t,n,r){var a=new Date(t,n-1,r).getTime(),s=new Date(622,0,21).getTime(),o=e((a-s)/864e5);return{jy:1+e(o/365.2425),jm:1+e(o%365.2425/30.44),jd:1+e(o%365.2425%30.44)}},JC.toGregorian=function(t,n,r){for(var a=622,s=0,o=0;o<t;o++)s+=JC.isLeap(t-o)?366:365;s+=n<=6?31*n-31:31*6+(n-6)*30;s+=r-1;var l=new Date(a,0,1),i=new Date(l.getTime()+s*864e5);return{gy:i.getFullYear(),gm:i.getMonth()+1,gd:i.getDate()}};})();
 </script>
 <style>
 :root{
@@ -132,6 +86,12 @@ select.inp{cursor:pointer}
 .bsv:active{background:var(--acc2)}
 .bcl{padding:12px 14px;background:var(--border);color:var(--sub);border:none;border-radius:11px;font-size:14px;cursor:pointer;font-family:inherit}
 
+/* ── DATE/TIME PICKERS ── */
+.date-time-row{display:flex;gap:8px;margin-bottom:10px}
+.date-time-row>div{flex:1}
+.date-inp,.time-inp{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit}
+.date-inp:focus,.time-inp:focus{outline:none;border-color:var(--accent)}
+
 /* ── JALALI CALENDAR PICKER ── */
 .date-btn{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--sub);font-size:14px;margin-bottom:0;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:inherit;text-align:right}
 .date-btn.sel{color:var(--text);border-color:var(--accent)}
@@ -205,7 +165,7 @@ select.inp{cursor:pointer}
 </div>
 
 <!-- VERSION TAG -->
-<div style="position:fixed;bottom:2px;right:50%;transform:translateX(50%);font-size:9px;color:#3a5a3a;z-index:1;pointer-events:none">v6 | @monazambot</div>
+<div style="position:fixed;bottom:2px;right:50%;transform:translateX(50%);font-size:9px;color:#3a5a3a;z-index:1;pointer-events:none">v7 | @monazambot</div>
 
 <!-- OVERLAY -->
 <div class="overlay" id="overlay"></div>
@@ -216,25 +176,22 @@ select.inp{cursor:pointer}
   <div class="sh-ttl" id="t-sh-ttl">تسک جدید</div>
   <label class="lbl">عنوان تسک *</label>
   <input class="inp" id="si-title" placeholder="مثلاً: بررسی وبسایت..." autocomplete="off"/>
-  <label class="lbl">ددلاین (شمسی)</label>
-  <button class="date-btn" id="date-btn" onclick="toggleCal()">
-    <span id="date-txt">انتخاب تاریخ</span><span style="font-size:16px">📅</span>
-  </button>
-  <div class="cal-wrap" id="cal-wrap">
-    <div class="cal-hdr">
-      <button class="cal-nav" onclick="calN()">›</button>
-      <span class="cal-mo" id="cal-mo"></span>
-      <button class="cal-nav" onclick="calP()">‹</button>
+
+  <label class="lbl">تاریخ و ساعت (شمسی)</label>
+  <div class="date-time-row">
+    <div>
+      <input class="date-inp" id="si-date" type="date" placeholder="1405/03/15"/>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
+    <div>
+      <input class="time-inp" id="si-time" type="time" placeholder="14:30"/>
+    </div>
   </div>
-  <input type="hidden" id="si-dl"/>
+
   <label class="lbl">مسئول</label>
   <select class="inp" id="si-assigned">
     <option value="">— بدون مسئول —</option>
   </select>
-  <label class="lbl">زمان یادآوری (اعلان به تلگرام)</label>
-  <input class="inp" type="time" id="si-reminder"/>
+
   <div class="sh-acts">
     <button class="bcl" onclick="closeTaskSheet()">لغو</button>
     <button class="bsv" onclick="saveTask()">✓ ذخیره</button>
@@ -254,52 +211,56 @@ select.inp{cursor:pointer}
 </div>
 
 <script>
-// ══ CONFIG ════════════════════════════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycbysc7k8zrVYyqR08byEd5bCcBKjIvuxdDNghjtm1tJ8zCN7uohurTKbusNpwdJLdXX-qA/exec';
 const KEY = 'monazam2025secret';
-// ════════════════════════════════════════════════════════════════════
 
 const tg = window.Telegram.WebApp;
 tg.ready(); tg.expand();
 try{tg.setHeaderColor('#0f1a0f');tg.setBackgroundColor('#0f1a0f');}catch(e){}
 
-const MY_ID   = String(tg.initDataUnsafe?.user?.id || '');
+const MY_ID = String(tg.initDataUnsafe?.user?.id || '');
 const MY_NAME = ((tg.initDataUnsafe?.user?.first_name||'') + ' ' + (tg.initDataUnsafe?.user?.last_name||'')).trim() || 'من';
 
-// ── API helper ────────────────────────────────────────────────────────
+// ── API helper ────────────────────────────────────────────────────
 async function call(params, timeoutMs=12000){
   const qs = new URLSearchParams({...params, key:KEY});
   const ctrl = new AbortController();
-  console.log('[API] Calling:', params.action, 'URL:', API);
+  console.log('[API] Calling:', params.action);
   const timer = setTimeout(()=>{
-    console.log('[API] TIMEOUT after', timeoutMs, 'ms, aborting...');
+    console.log('[API] TIMEOUT, aborting...');
     ctrl.abort();
   }, timeoutMs);
   try{
     console.log('[API] Fetch started...');
     const r = await fetch(`${API}?${qs}`, {signal:ctrl.signal});
     clearTimeout(timer);
-    console.log('[API] Fetch response received, status:', r.status);
+    console.log('[API] Response received, status:', r.status);
     const j = await r.json();
-    console.log('[API] JSON parsed:', j);
+    console.log('[API] JSON parsed successfully');
     if(!j.ok) throw new Error(j.error||'خطای سرور');
     return j.data;
   }catch(e){
     clearTimeout(timer);
-    console.error('[API] Error caught:', e.name, e.message);
-    if(e.name==='AbortError') throw new Error('اتصال قطع شد — اینترنت رو چک کن (timeout)');
+    console.error('[API] Error:', e.name, e.message);
+    if(e.name==='AbortError') throw new Error('اتصال قطع شد — اینترنت رو چک کن');
     throw e;
   }
 }
 
-// ── Jalali conversion (via jalaali-js CDN) ────────────────────────────
+// ── Jalali helpers ────────────────────────────────────────────────
 const JM=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
 const JDN=['ش','ی','د','س','چ','پ','ج'];
 
-function toJ(gy,gm,gd){return jalaali.toJalaali(gy,gm,gd);}          // → {jy,jm,jd}
-function toG(jy,jm,jd){return jalaali.toGregorian(jy,jm,jd);}         // → {gy,gm,gd}
-function jDim(jy,jm){return jalaali.jalaaliMonthLength(jy,jm);}
-function jDow1(jy,jm){const{gy,gm,gd}=toG(jy,jm,1);return(new Date(gy,gm-1,gd).getDay()+1)%7;} // Sat=0
+function toJ(gy,gm,gd){
+  const res=JC.toJalali(gy,gm,gd);
+  return {jy:res.jy, jm:res.jm, jd:res.jd};
+}
+
+function toG(jy,jm,jd){
+  const res=JC.toGregorian(jy,jm,jd);
+  return {gy:res.gy, gm:res.gm, gd:res.gd};
+}
+
 function pad(n){return String(n).padStart(2,'0');}
 function giso(gy,gm,gd){return`${gy}-${pad(gm)}-${pad(gd)}`;}
 function jdisp(jy,jm,jd){return`${jy}/${pad(jm)}/${pad(jd)}`;}
@@ -307,41 +268,23 @@ function todayJ(){const n=new Date();return toJ(n.getFullYear(),n.getMonth()+1,n
 function todayIso(){const n=new Date();return giso(n.getFullYear(),n.getMonth()+1,n.getDate());}
 function parseIso(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);const dt=new Date(y,m-1,d);dt.setHours(0,0,0,0);return dt;}
 
-// ── تعطیلات رسمی 1405 ────────────────────────────────────────────────
+// ── تعطیلات رسمی 1405 ────────────────────────────────────────────
 const HOLIDAYS = new Set([
-  // نوروز
   '1405/01/01','1405/01/02','1405/01/03','1405/01/04',
-  '1405/01/12', // روز جمهوری اسلامی
-  '1405/01/13', // سیزده بدر
-  // خرداد
-  '1405/03/14', // رحلت امام خمینی
-  '1405/03/15', // قیام ۱۵ خرداد
-  // مرداد
-  '1405/05/11', // عید قربان (تقریبی)
-  '1405/05/19', // عید غدیر (تقریبی)
-  // محرم
-  '1405/06/06', // تاسوعا (تقریبی)
-  '1405/06/07', // عاشورا (تقریبی)
-  // بهمن
-  '1405/11/22', // پیروزی انقلاب
-  // اسفند
-  '1405/12/29', // ملی شدن صنعت نفت
-  // ماه‌های قبل ۱۴۰۵
-  '1404/12/21', // تولد حضرت علی
+  '1405/01/12','1405/01/13','1405/03/14','1405/03/15',
+  '1405/05/11','1405/05/19','1405/06/06','1405/06/07',
+  '1405/11/22','1405/12/29'
 ]);
 
-function isHoliday(jy,jm,jd){
-  return HOLIDAYS.has(`${jy}/${pad(jm)}/${pad(jd)}`);
-}
+function isHoliday(jy,jm,jd){return HOLIDAYS.has(`${jy}/${pad(jm)}/${pad(jd)}`);}
 function isFriday(jy,jm,jd){
   const{gy,gm,gd}=toG(jy,jm,jd);
-  return new Date(gy,gm-1,gd).getDay()===5; // 5=Friday
+  return new Date(gy,gm-1,gd).getDay()===5;
 }
 
-// ── State ─────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────
 let tasks=[], habits=[], users=[];
 let taskFilter='all', weekOff=0, editingId=null;
-let calJY, calJM, selJY, selJM, selJD, selGreg='';
 let habLog={};
 
 const tj=todayJ();
@@ -349,19 +292,20 @@ const todayStr=todayIso();
 const todayDate=parseIso(todayStr);
 const weekEnd=new Date(todayDate);weekEnd.setDate(todayDate.getDate()+7);
 
-// ── Task filter + render ──────────────────────────────────────────────
+// ── Task filter + render ──────────────────────────────────────────
 function filtered(){
   return tasks.filter(t=>{
     const dl=parseIso(t.deadline_greg),done=t.status==='done';
     if(taskFilter==='done')return done;
     if(done)return false;
     if(taskFilter==='all')return true;
-    if(taskFilter==='today')return dl&&dl<=todayDate;
+    if(taskFilter==='today')return dl&&dl.getTime()===todayDate.getTime();
     if(taskFilter==='week')return dl&&dl>todayDate&&dl<=weekEnd;
     if(taskFilter==='overdue')return dl&&dl<todayDate;
     return true;
   });
 }
+
 function dlCls(g){const d=parseIso(g);if(!d)return'';if(d<todayDate)return'ov';if(d.getTime()===todayDate.getTime())return'td';return'';}
 
 function renderTasks(){
@@ -393,18 +337,18 @@ async function loadTasks(){
   console.log('[loadTasks] Starting...');
   document.getElementById('t-list').innerHTML='<div class="spin"></div>';
   const timeoutHandle = setTimeout(()=>{
-    console.error('[loadTasks] Manual timeout after 15s, showing error');
-    document.getElementById('t-list').innerHTML=`<div class="empty">⏱️ درخواست بیش از 15 ثانیه طول کشید<br>API شاید آفلاین است<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
+    console.error('[loadTasks] Manual timeout, showing error');
+    document.getElementById('t-list').innerHTML=`<div class="empty">⏱️ درخواست بیش از 15 ثانیه طول کشید<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
   }, 15000);
   try{
     tasks=await call({action:'get_tasks'});
     clearTimeout(timeoutHandle);
-    console.log('[loadTasks] Success, tasks:', tasks.length);
+    console.log('[loadTasks] Success');
     renderTasks();
   }catch(e){
     clearTimeout(timeoutHandle);
-    console.error('[loadTasks] Error caught:', e.message);
-    document.getElementById('t-list').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
+    console.error('[loadTasks] Error:', e.message);
+    document.getElementById('t-list').innerHTML=`<div class="empty">❌ ${e.message||'خطا'}<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
   }
 }
 
@@ -420,51 +364,7 @@ async function delTask(id){
   await call({action:'delete_task',id}).catch(()=>{});
 }
 
-// ── Calendar ──────────────────────────────────────────────────────────
-function initCal(){calJY=tj.jy;calJM=tj.jm;renderCal();}
-function toggleCal(){const w=document.getElementById('cal-wrap');w.classList.toggle('show');if(w.classList.contains('show'))renderCal();}
-function calP(){calJM--;if(calJM<1){calJM=12;calJY--;}renderCal();}
-function calN(){calJM++;if(calJM>12){calJM=1;calJY++;}renderCal();}
-
-function renderCal(){
-  document.getElementById('cal-mo').textContent=`${JM[calJM-1]} ${calJY}`;
-  // headers: ش ی د س چ پ ج  (Sat→Fri)
-  let h=JDN.map((d,i)=>`<div class="cal-wd${i===6?' cal-fri':''}">${d}</div>`).join('');
-  const fd=jDow1(calJY,calJM),nd=jDim(calJY,calJM);
-  for(let i=0;i<fd;i++)h+=`<button class="cal-d"></button>`;
-  for(let d=1;d<=nd;d++){
-    const isT=calJY===tj.jy&&calJM===tj.jm&&d===tj.jd;
-    const isS=selJY===calJY&&selJM===calJM&&selJD===d;
-    const isHol=isHoliday(calJY,calJM,d)||isFriday(calJY,calJM,d);
-    let cls='cal-d';
-    if(isS)cls+=' sel';
-    else if(isT)cls+=' today';
-    if(isHol&&!isS)cls+=' hol';
-    h+=`<button class="${cls}" onclick="pickDay(${d})">${d}</button>`;
-  }
-  document.getElementById('cal-grid').innerHTML=h;
-}
-
-function pickDay(d){
-  selJY=calJY;selJM=calJM;selJD=d;
-  const{gy,gm,gd}=toG(calJY,calJM,d);
-  selGreg=giso(gy,gm,gd);
-  const disp=jdisp(calJY,calJM,d);
-  document.getElementById('si-dl').value=disp;
-  document.getElementById('date-txt').textContent=disp;
-  document.getElementById('date-btn').classList.add('sel');
-  document.getElementById('cal-wrap').classList.remove('show');
-  renderCal();
-}
-
-function resetDatePicker(){
-  selJY=selJM=selJD=undefined;selGreg='';
-  document.getElementById('si-dl').value='';
-  document.getElementById('date-txt').textContent='انتخاب تاریخ';
-  document.getElementById('date-btn').classList.remove('sel');
-}
-
-// ── Users dropdown ────────────────────────────────────────────────────
+// ── Users dropdown ────────────────────────────────────────────────
 async function loadUsers(){
   try{users=await call({action:'get_users'});}catch(e){users=[];}
   const sel=document.getElementById('si-assigned');
@@ -478,16 +378,14 @@ async function loadUsers(){
   });
 }
 
-// ── Task sheet ────────────────────────────────────────────────────────
+// ── Task sheet ────────────────────────────────────────────────────
 function openAddTask(){
   editingId=null;
   document.getElementById('t-sh-ttl').textContent='تسک جدید';
   document.getElementById('si-title').value='';
+  document.getElementById('si-date').value='';
+  document.getElementById('si-time').value='';
   document.getElementById('si-assigned').value='';
-  document.getElementById('si-reminder').value='';
-  document.getElementById('cal-wrap').classList.remove('show');
-  resetDatePicker();
-  initCal();
   openSheet('task-sheet');
   setTimeout(()=>document.getElementById('si-title').focus(),300);
 }
@@ -497,29 +395,21 @@ function openEditTask(id){
   editingId=id;
   document.getElementById('t-sh-ttl').textContent='ویرایش تسک';
   document.getElementById('si-title').value=t.title;
-  if(t.deadline){
-    const p=t.deadline.split('/');
-    if(p.length===3){
-      selJY=+p[0];selJM=+p[1];selJD=+p[2];selGreg=t.deadline_greg||'';
-      calJY=selJY;calJM=selJM;
-      document.getElementById('si-dl').value=t.deadline;
-      document.getElementById('date-txt').textContent=t.deadline;
-      document.getElementById('date-btn').classList.add('sel');
-    }
-  }else{resetDatePicker();initCal();}
+  if(t.deadline_greg){
+    document.getElementById('si-date').value=t.deadline_greg;
+  }else{
+    document.getElementById('si-date').value='';
+  }
+  document.getElementById('si-time').value=t.reminder_at?String(t.reminder_at).slice(11,16):'';
   const auid=String(t.assigned_user_id||'');
-  const aname=t.assigned_to||'';
   const sel=document.getElementById('si-assigned');
-  // Try matching by user_id first, then by name
   let found=false;
   for(let i=0;i<sel.options.length;i++){
-    if(sel.options[i].value===auid||(auid===''&&sel.options[i].text.includes(aname))){
+    if(sel.options[i].value===auid){
       sel.selectedIndex=i;found=true;break;
     }
   }
   if(!found)sel.value='';
-  document.getElementById('si-reminder').value=t.reminder_at?String(t.reminder_at).slice(11,16):'';
-  document.getElementById('cal-wrap').classList.remove('show');
   openSheet('task-sheet');
   setTimeout(()=>document.getElementById('si-title').focus(),300);
 }
@@ -532,9 +422,16 @@ function closeTaskSheet(){
 async function saveTask(){
   const title=document.getElementById('si-title').value.trim();
   if(!title){document.getElementById('si-title').focus();return;}
-  const dl=document.getElementById('si-dl').value.trim();
+  const dateG=document.getElementById('si-date').value.trim();
+  const timeV=document.getElementById('si-time').value.trim();
   const aval=document.getElementById('si-assigned').value;
-  const rt=document.getElementById('si-reminder').value;
+
+  let dateJ='';
+  if(dateG){
+    const[y,m,d]=dateG.split('-').map(Number);
+    const jal=toJ(y,m,d);
+    dateJ=jdisp(jal.jy,jal.jm,jal.jd);
+  }
 
   let aname='';
   if(aval){
@@ -542,55 +439,60 @@ async function saveTask(){
     else{const u=(users||[]).find(x=>String(x.id)===aval);aname=u?u.name:'';}
   }
 
-  const params={title,deadline:dl||'',assigned_to:aname,reminder_time:rt||'',
+  const params={title,deadline:dateJ||'',assigned_to:aname,reminder_time:timeV||'',
     assigned_user_id:aval||'',created_by_user_id:MY_ID||''};
 
   try{
     if(editingId!==null){
       const res=await call({action:'edit_task',id:editingId,...params});
       const idx=tasks.findIndex(t=>t.id==editingId);
-      if(idx!==-1)tasks[idx]={...tasks[idx],title,deadline:dl||'',deadline_greg:res.deadline_greg||selGreg||'',
-        assigned_to:aname,assigned_user_id:aval||'',reminder_at:res.reminder_at||''};
+      if(idx!==-1)tasks[idx]={...tasks[idx],title,deadline:dateJ||'',deadline_greg:dateG||'',
+        assigned_to:aname,assigned_user_id:aval||'',reminder_at:dateG&&timeV?`${dateG} ${timeV}`:''};
     }else{
       const nt=await call({action:'add_task',...params});
       tasks.unshift(nt);
     }
     renderTasks();closeTaskSheet();
-  }catch(e){alert('خطا در ذخیره: '+e.message);}
+  }catch(e){alert('خطا: '+e.message);}
 }
 
-// ── Habit tracker ─────────────────────────────────────────────────────
+// ── Habit tracker ─────────────────────────────────────────────────
 function satOfWeek(off){
   const d=new Date();
-  const dow=d.getDay();// 0=Sun,6=Sat
+  const dow=d.getDay();
   const dss=dow===6?0:(dow+1);
   const sat=new Date(d);sat.setDate(d.getDate()-dss+off*7);sat.setHours(0,0,0,0);
   return sat;
 }
+
 function weekDates(off){
   const sat=satOfWeek(off);
   return Array.from({length:7},(_,i)=>{const d=new Date(sat);d.setDate(sat.getDate()+i);return giso(d.getFullYear(),d.getMonth()+1,d.getDate());});
 }
 
 async function loadHabits(){
+  console.log('[loadHabits] Starting...');
   document.getElementById('h-wrap').innerHTML='<div class="spin"></div>';
   try{
     habits=await call({action:'get_habit_list'});
     const dates=weekDates(weekOff);
     habLog=await call({action:'get_habit_week',dates:dates.join(',')}) || {};
+    console.log('[loadHabits] Success');
     renderHabits();
   }catch(e){
-    document.getElementById('h-wrap').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadHabits()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
+    console.error('[loadHabits] Error:', e.message);
+    document.getElementById('h-wrap').innerHTML=`<div class="empty">❌ ${e.message||'خطا'}<br><br><button onclick="loadHabits()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
   }
 }
 
 function renderHabits(){
   const dates=weekDates(weekOff);
-  // Week label
   const ws0=satOfWeek(weekOff),we=new Date(ws0);we.setDate(ws0.getDate()+6);
   const j0=toJ(ws0.getFullYear(),ws0.getMonth()+1,ws0.getDate());
   const j1=toJ(we.getFullYear(),we.getMonth()+1,we.getDate());
-  document.getElementById('w-lbl').textContent=`${j0.jd} ${JM[j0.jm-1]} — ${j1.jd} ${JM[j1.jm-1]} ${j1.jy}`;
+
+  const weekLabel=`${j0.jd} ${JM[j0.jm-1]} تا ${j1.jd} ${JM[j1.jm-1]} ${j1.jy}`;
+  document.getElementById('w-lbl').textContent=weekLabel;
 
   if(!habits||!habits.length){
     document.getElementById('h-wrap').innerHTML='<div class="empty">هنوز عادتی ثبت نشده<br><small>با دکمه + عادت اضافه کنید</small></div>';
@@ -599,7 +501,8 @@ function renderHabits(){
 
   let html='<table class="htbl"><thead><tr><th class="hname-col">عادت</th>';
   dates.forEach((ds,i)=>{
-    const{jy,jm,jd}=toJ(...ds.split('-').map(Number));
+    const[y,m,d]=ds.split('-').map(Number);
+    const{jy,jm,jd}=toJ(y,m,d);
     const isTod=ds===todayStr;
     html+=`<th class="${isTod?'today-th':''}"><div>${JDN[i]}</div><div style="font-size:9px;color:var(--sub)">${jd}</div></th>`;
   });
@@ -609,10 +512,10 @@ function renderHabits(){
     html+=`<tr><td class="hname-cell" title="${h}">${h}</td>`;
     dates.forEach((ds,i)=>{
       const done=((habLog||{})[ds]||[]).includes(h);
-      const isFut=ds>todayStr;
+      const isFut=new Date(ds)<new Date();
       const isTod=ds===todayStr;
-      html+=`<td><button class="hck ${done?'done':''} ${isFut?'fut':''} ${isTod&&!done?'today-cell':''}"
-        onclick="toggleHab(${JSON.stringify(h)},${JSON.stringify(ds)})"></button></td>`;
+      html+=`<td><button class="hck ${done?'done':''} ${!isFut?'fut':''} ${isTod&&!done?'today-cell':''}"
+        onclick="toggleHab('${h}','${ds}')"></button></td>`;
     });
     html+='</tr>';
   });
@@ -631,12 +534,13 @@ async function toggleHab(name,ds){
   });
 }
 
-// ── Habit sheet ───────────────────────────────────────────────────────
+// ── Habit sheet ───────────────────────────────────────────────────
 function openHabSheet(){
   document.getElementById('si-habit').value='';
   openSheet('hab-sheet');
   setTimeout(()=>document.getElementById('si-habit').focus(),300);
 }
+
 function closeHabSheet(){closeSheet('hab-sheet');}
 
 async function saveHabit(){
@@ -646,20 +550,21 @@ async function saveHabit(){
     await call({action:'add_habit',name});
     closeHabSheet();
     habits.push(name);renderHabits();
-  }catch(e){alert('خطا در ذخیره: '+e.message);}
+  }catch(e){alert('خطا: '+e.message);}
 }
 
-// ── Sheet helpers ─────────────────────────────────────────────────────
+// ── Sheet helpers ─────────────────────────────────────────────────
 function openSheet(id){
   document.getElementById(id).classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
+
 function closeSheet(id){
   document.getElementById(id).classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
 
-// ── Navigation ────────────────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────────
 document.querySelectorAll('.tnb').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tnb').forEach(b=>b.classList.remove('active'));
@@ -688,10 +593,10 @@ document.getElementById('overlay').onclick=()=>{
 document.getElementById('si-title').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
 document.getElementById('si-habit').addEventListener('keydown',e=>{if(e.key==='Enter')saveHabit();});
 
-// ── Init ──────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────
+console.log('[Init] Today Jalali:', tj.jy, tj.jm, tj.jd);
 loadTasks();
 loadUsers();
-initCal();
 </script>
 </body>
 </html>
