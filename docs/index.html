@@ -270,16 +270,24 @@ const MY_NAME = ((tg.initDataUnsafe?.user?.first_name||'') + ' ' + (tg.initDataU
 async function call(params, timeoutMs=12000){
   const qs = new URLSearchParams({...params, key:KEY});
   const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), timeoutMs);
+  console.log('[API] Calling:', params.action, 'URL:', API);
+  const timer = setTimeout(()=>{
+    console.log('[API] TIMEOUT after', timeoutMs, 'ms, aborting...');
+    ctrl.abort();
+  }, timeoutMs);
   try{
+    console.log('[API] Fetch started...');
     const r = await fetch(`${API}?${qs}`, {signal:ctrl.signal});
     clearTimeout(timer);
+    console.log('[API] Fetch response received, status:', r.status);
     const j = await r.json();
+    console.log('[API] JSON parsed:', j);
     if(!j.ok) throw new Error(j.error||'خطای سرور');
     return j.data;
   }catch(e){
     clearTimeout(timer);
-    if(e.name==='AbortError') throw new Error('اتصال قطع شد — اینترنت رو چک کن');
+    console.error('[API] Error caught:', e.name, e.message);
+    if(e.name==='AbortError') throw new Error('اتصال قطع شد — اینترنت رو چک کن (timeout)');
     throw e;
   }
 }
@@ -382,9 +390,22 @@ function renderTasks(){
 }
 
 async function loadTasks(){
+  console.log('[loadTasks] Starting...');
   document.getElementById('t-list').innerHTML='<div class="spin"></div>';
-  try{tasks=await call({action:'get_tasks'});renderTasks();}
-  catch(e){document.getElementById('t-list').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;}
+  const timeoutHandle = setTimeout(()=>{
+    console.error('[loadTasks] Manual timeout after 15s, showing error');
+    document.getElementById('t-list').innerHTML=`<div class="empty">⏱️ درخواست بیش از 15 ثانیه طول کشید<br>API شاید آفلاین است<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
+  }, 15000);
+  try{
+    tasks=await call({action:'get_tasks'});
+    clearTimeout(timeoutHandle);
+    console.log('[loadTasks] Success, tasks:', tasks.length);
+    renderTasks();
+  }catch(e){
+    clearTimeout(timeoutHandle);
+    console.error('[loadTasks] Error caught:', e.message);
+    document.getElementById('t-list').innerHTML=`<div class="empty">❌ ${e.message||'خطا در بارگذاری'}<br><br><button onclick="loadTasks()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">🔄 تلاش مجدد</button></div>`;
+  }
 }
 
 async function toggleTask(id){
